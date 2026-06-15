@@ -6,6 +6,8 @@ import {
   getStoryById,
   addEntry,
   resetStory,
+  archiveStory,
+  unarchiveStory,
   MAX_PARTICIPANTS,
   MAX_CHARS_PER_STORY
 } from './storage.js';
@@ -22,9 +24,10 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
-app.get('/api/stories', (_req, res) => {
+app.get('/api/stories', (req, res) => {
   try {
-    const stories = getAllStories();
+    const includeArchived = req.query.includeArchived === 'true';
+    const stories = getAllStories({ includeArchived });
     res.json(stories);
   } catch (err) {
     console.error(err);
@@ -108,6 +111,38 @@ app.post('/api/admin/stories/:id/reset', (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '重置故事失败' });
+  }
+});
+
+app.post('/api/admin/stories/:id/archive', (req, res) => {
+  try {
+    const result = archiveStory(req.params.id);
+    if (!result.success) {
+      return res.status(result.code || 400).json({ error: result.error });
+    }
+    res.json({
+      message: '故事已归档',
+      story: result.story
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '归档故事失败' });
+  }
+});
+
+app.post('/api/admin/stories/:id/unarchive', (req, res) => {
+  try {
+    const result = unarchiveStory(req.params.id);
+    if (!result.success) {
+      return res.status(result.code || 400).json({ error: result.error });
+    }
+    res.json({
+      message: '故事已取消归档',
+      story: result.story
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '取消归档失败' });
   }
 });
 

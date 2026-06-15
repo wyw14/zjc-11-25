@@ -36,7 +36,9 @@
       "totalChars": 15,
       "participantCount": 1,
       "locked": false,
-      "lockedReason": null
+      "lockedReason": null,
+      "archived": false,
+      "archivedAt": null
     }
   }
 }

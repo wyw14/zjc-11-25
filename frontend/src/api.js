@@ -15,11 +15,13 @@ request.interceptors.response.use(
 
 export const api = {
   getConfig: () => request.get('/config'),
-  getStories: () => request.get('/stories'),
+  getStories: (params) => request.get('/stories', { params }),
   getStory: (id) => request.get(`/stories/${id}`),
   createStory: (data) => request.post('/stories', data),
   addEntry: (id, data) => request.post(`/stories/${id}/entries`, data),
-  resetStory: (id) => request.post(`/admin/stories/${id}/reset`)
+  resetStory: (id) => request.post(`/admin/stories/${id}/reset`),
+  archiveStory: (id) => request.post(`/admin/stories/${id}/archive`),
+  unarchiveStory: (id) => request.post(`/admin/stories/${id}/unarchive`)
 }
 
 export default api

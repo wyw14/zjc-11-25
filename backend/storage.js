@@ -63,6 +63,8 @@ function formatStoryDetail(story) {
     title: story.title,
     createdAt: story.createdAt,
     updatedAt: story.updatedAt,
+    archived: story.archived || false,
+    archivedAt: story.archivedAt || null,
     entryCount: story.entries.length,
     participantCount: story.participantCount,
     totalChars: story.totalChars,
@@ -97,15 +99,21 @@ export function createStory({ title, content, author }) {
   return formatStoryDetail(story);
 }
 
-export function getAllStories() {
+export function getAllStories({ includeArchived = false } = {}) {
   const data = readData();
-  return Object.values(data.stories)
+  let list = Object.values(data.stories);
+  if (!includeArchived) {
+    list = list.filter(s => !s.archived);
+  }
+  return list
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .map(s => ({
       id: s.id,
       title: s.title,
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
+      archived: s.archived || false,
+      archivedAt: s.archivedAt || null,
       entryCount: s.entries.length,
       participantCount: s.participantCount,
       totalChars: s.totalChars,
@@ -182,3 +190,33 @@ export function resetStory(storyId) {
 }
 
 export { MAX_PARTICIPANTS, MAX_CHARS_PER_STORY };
+
+export function archiveStory(storyId) {
+  const data = readData();
+  const story = data.stories[storyId];
+  if (!story) {
+    return { success: false, error: '故事不存在', code: 404 };
+  }
+  if (story.archived) {
+    return { success: false, error: '故事已归档', code: 409 };
+  }
+  story.archived = true;
+  story.archivedAt = Date.now();
+  writeData(data);
+  return { success: true, story: formatStoryDetail(story) };
+}
+
+export function unarchiveStory(storyId) {
+  const data = readData();
+  const story = data.stories[storyId];
+  if (!story) {
+    return { success: false, error: '故事不存在', code: 404 };
+  }
+  if (!story.archived) {
+    return { success: false, error: '故事未归档', code: 409 };
+  }
+  story.archived = false;
+  story.archivedAt = null;
+  writeData(data);
+  return { success: true, story: formatStoryDetail(story) };
+}
