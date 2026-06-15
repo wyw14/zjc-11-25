@@ -7,6 +7,14 @@
 
       <div v-if="loading" class="loading card">正在加载故事...</div>
 
+      <div v-else-if="archivedError" class="empty card">
+        <div class="empty-icon">📦</div>
+        <p>{{ archivedError }}</p>
+        <router-link to="/" class="btn-primary" style="margin-top: 16px; display: inline-block;">
+          返回广场
+        </router-link>
+      </div>
+
       <div v-else-if="!story" class="empty card">
         <div class="empty-icon">❓</div>
         <p>故事不存在或已被删除</p>
@@ -15,8 +23,25 @@
         </router-link>
       </div>
 
-      <template v-else>
-        <header class="story-header card">
+      <div v-else-if="story.archived" class="archived-notice card">
+        <div class="archived-header">
+          <h1 class="story-title">{{ story.title }}</h1>
+          <span class="tag tag-info">已归档</span>
+        </div>
+        <div class="locked-content">
+          <div class="locked-icon">📦</div>
+          <h3>该故事已归档</h3>
+          <p class="locked-reason-detail">此故事已被管理员归档，不再展示在广场中。</p>
+          <p class="locked-tip">
+            共 <strong>{{ story.participantCount }}</strong> 位作者参与，
+            累计 <strong>{{ story.entryCount }}</strong> 段、
+            <strong>{{ story.totalChars }}</strong> 字。
+          </p>
+        </div>
+      </div>
+
+      <template v-if="story && !archivedError">
+        <header v-if="!story.archived" class="story-header card">
           <div class="header-top">
             <h1 class="story-title">{{ story.title }}</h1>
             <span
@@ -94,7 +119,7 @@
           </div>
         </section>
 
-        <section v-if="!story.locked" class="write-section card">
+        <section v-if="!story.locked && !story.archived" class="write-section card">
           <h2 class="section-title">✏️ 参与续写</h2>
           <div class="form-group">
             <label>你的笔名</label>
@@ -133,7 +158,7 @@
           </button>
         </section>
 
-        <section v-else class="locked-section card">
+        <section v-if="story.locked && !story.archived" class="locked-section card">
           <div class="locked-content">
             <div class="locked-icon">🎉</div>
             <h3>恭喜！这篇故事已创作完成</h3>
@@ -168,6 +193,7 @@ const story = ref(null)
 const loading = ref(false)
 const submitting = ref(false)
 const submitError = ref('')
+const archivedError = ref('')
 const form = ref({ author: '', content: '' })
 const chatListRef = ref(null)
 
@@ -189,6 +215,7 @@ const maxAllowedChars = computed(() => Math.max(1, remainingChars.value))
 
 const canSubmit = computed(() => {
   return (
+    !story.value?.archived &&
     form.value.author.trim().length > 0 &&
     form.value.content.trim().length > 0 &&
     form.value.content.length <= maxAllowedChars.value
@@ -210,8 +237,28 @@ function avatarColor(name) {
 
 async function loadStory() {
   loading.value = true
+  archivedError.value = ''
   try {
-    story.value = await api.getStory(props.id || route.params.id)
+    const storyId = props.id || route.params.id
+    const isAdminAccess = route.query.admin === 'true'
+    try {
+      story.value = await api.getStory(storyId)
+    } catch (e) {
+      if (e.message === '故事已归档，无法查看') {
+        if (isAdminAccess) {
+          try {
+            story.value = await api.getAdminStory(storyId)
+          } catch (adminErr) {
+            story.value = null
+          }
+        } else {
+          story.value = null
+          archivedError.value = e.message
+        }
+      } else {
+        story.value = null
+      }
+    }
   } catch (e) {
     console.error(e)
     story.value = null
@@ -223,6 +270,10 @@ async function loadStory() {
 async function handleSubmit() {
   submitError.value = ''
   if (!canSubmit.value) return
+  if (story.value?.archived) {
+    submitError.value = '故事已归档，无法续写'
+    return
+  }
   submitting.value = true
   try {
     const updated = await api.addEntry(story.value.id, {
@@ -483,6 +534,27 @@ onMounted(loadStory)
   font-size: 12px;
   color: var(--text-muted);
   margin-top: 4px;
+}
+
+.archived-notice {
+  background: linear-gradient(135deg, #fef3c7 0%, #f3e8ff 100%);
+  border-color: #ddd6fe;
+  margin-bottom: 20px;
+}
+
+.archived-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.archived-header .story-title {
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .locked-section {

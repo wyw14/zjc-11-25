@@ -37,8 +37,8 @@
       "participantCount": 1,
       "locked": false,
       "lockedReason": null,
-      "archived": false,
-      "archivedAt": null
+      "archived": true,
+      "archivedAt": 1781490705335
     }
   }
 }

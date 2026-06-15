@@ -17,6 +17,7 @@ export const api = {
   getConfig: () => request.get('/config'),
   getStories: (params) => request.get('/stories', { params }),
   getStory: (id) => request.get(`/stories/${id}`),
+  getAdminStory: (id) => request.get(`/admin/stories/${id}`),
   createStory: (data) => request.post('/stories', data),
   addEntry: (id, data) => request.post(`/stories/${id}/entries`, data),
   resetStory: (id) => request.post(`/admin/stories/${id}/reset`),

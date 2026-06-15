@@ -85,6 +85,8 @@ export function createStory({ title, content, author }) {
     title,
     createdAt: now,
     updatedAt: now,
+    archived: false,
+    archivedAt: null,
     entries: [{
       id: generateId(),
       author,
@@ -122,14 +124,17 @@ export function getAllStories({ includeArchived = false } = {}) {
     }));
 }
 
-export function getStoryById(id) {
+export function getStoryById(id, { allowArchived = false } = {}) {
   const data = readData();
   const story = data.stories[id];
-  if (!story) return null;
+  if (!story) return { success: false, error: '故事不存在', code: 404 };
+  if (!allowArchived && story.archived) {
+    return { success: false, error: '故事已归档，无法查看', code: 403 };
+  }
   updateStoryStatus(story);
   data.stories[id] = story;
   writeData(data);
-  return formatStoryDetail(story);
+  return { success: true, story: formatStoryDetail(story) };
 }
 
 export function addEntry(storyId, { content, author }) {
@@ -137,6 +142,9 @@ export function addEntry(storyId, { content, author }) {
   const story = data.stories[storyId];
   if (!story) {
     return { success: false, error: '故事不存在', code: 404 };
+  }
+  if (story.archived) {
+    return { success: false, error: '故事已归档，无法续写', code: 403 };
   }
   updateStoryStatus(story);
   if (story.locked) {

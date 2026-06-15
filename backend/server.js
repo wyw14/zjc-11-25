@@ -37,11 +37,11 @@ app.get('/api/stories', (req, res) => {
 
 app.get('/api/stories/:id', (req, res) => {
   try {
-    const story = getStoryById(req.params.id);
-    if (!story) {
-      return res.status(404).json({ error: '故事不存在' });
+    const result = getStoryById(req.params.id);
+    if (!result.success) {
+      return res.status(result.code || 404).json({ error: result.error });
     }
-    res.json(story);
+    res.json(result.story);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '获取故事详情失败' });
@@ -143,6 +143,19 @@ app.post('/api/admin/stories/:id/unarchive', (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '取消归档失败' });
+  }
+});
+
+app.get('/api/admin/stories/:id', (req, res) => {
+  try {
+    const result = getStoryById(req.params.id, { allowArchived: true });
+    if (!result.success) {
+      return res.status(result.code || 404).json({ error: result.error });
+    }
+    res.json(result.story);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '获取故事详情失败' });
   }
 });
 

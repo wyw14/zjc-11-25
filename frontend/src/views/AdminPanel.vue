@@ -89,7 +89,7 @@
                     <div class="actions">
                       <button
                         class="btn-secondary btn-sm"
-                        @click="viewStory(s.id)"
+                        @click="viewStory(s.id, s.archived)"
                       >查看</button>
                       <button
                         class="btn-danger btn-sm"
@@ -158,7 +158,7 @@
                     <div class="actions">
                       <button
                         class="btn-secondary btn-sm"
-                        @click="viewStory(s.id)"
+                        @click="viewStory(s.id, s.archived)"
                       >查看</button>
                       <button
                         class="btn-unarchive btn-sm"
@@ -290,8 +290,12 @@ async function loadStories() {
   }
 }
 
-function viewStory(id) {
-  router.push(`/story/${id}`)
+function viewStory(id, isArchived) {
+  if (isArchived) {
+    router.push({ path: `/story/${id}`, query: { admin: 'true' } })
+  } else {
+    router.push(`/story/${id}`)
+  }
 }
 
 function askReset(story) {
